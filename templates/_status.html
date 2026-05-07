@@ -1,0 +1,13 @@
+{# Renders a compact status badge for a flight row. Expects `f` in scope. #}
+{%- set s = (f.status or 'unknown') | lower -%}
+{%- if s == 'active' or s == 'en-route' -%}
+  <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-medium">{{ s }}</span>
+{%- elif s == 'scheduled' -%}
+  <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 text-xs font-medium">{{ s }}</span>
+{%- elif s == 'landed' or s == 'arrived' -%}
+  <span class="px-2 py-0.5 rounded bg-ink-200 text-ink-700 text-xs font-medium">{{ s }}</span>
+{%- elif s == 'cancelled' or s == 'canceled' -%}
+  <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-xs font-medium">{{ s }}</span>
+{%- else -%}
+  <span class="px-2 py-0.5 rounded bg-ink-100 text-ink-700 text-xs font-medium">{{ s }}</span>
+{%- endif -%}

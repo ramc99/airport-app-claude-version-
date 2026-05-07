@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ airline.name or airline.iata_code }} · airline{% endblock %}
+
+{% block content %}
+<header class="mb-6">
+  <div class="flex items-baseline gap-3">
+    <h1 class="text-3xl font-semibold tracking-tight">{{ airline.name or 'Airline' }}</h1>
+    {% if airline.iata_code %}<span class="text-2xl font-mono text-ink-500">{{ airline.iata_code }}</span>{% endif %}
+  </div>
+  <div class="mt-2 flex gap-x-6 gap-y-1 text-sm text-ink-500">
+    {% if airline.icao_code %}<span>ICAO: <span class="font-mono text-ink-700">{{ airline.icao_code }}</span></span>{% endif %}
+    {% if airline.country_code %}<span>Country: <span class="text-ink-700">{{ airline.country_code }}</span></span>{% endif %}
+  </div>
+</header>
+
+<section class="bg-white rounded-lg border border-ink-200">
+  <div class="flex items-center justify-between p-4 border-b border-ink-200">
+    <h2 class="font-semibold">Live flights</h2>
+    {% if iata %}<a href="{{ url_for('schedules_view', airline=iata) }}" class="text-xs text-accent-700 hover:underline">all schedules →</a>{% endif %}
+  </div>
+  {% if flights %}
+  <table class="w-full text-sm">
+    <thead class="text-xs text-ink-500 uppercase">
+      <tr><th class="text-left p-3">Flight</th><th class="text-left p-3">From</th><th class="text-left p-3">To</th><th class="text-left p-3">Alt</th><th class="text-left p-3">Speed</th></tr>
+    </thead>
+    <tbody>
+      {% for f in flights %}
+      <tr class="border-t border-ink-100 hover:bg-ink-50">
+        <td class="p-3 font-mono">
+          {% if f.flight_iata %}<a href="{{ url_for('flight_view', code=f.flight_iata) }}" class="hover:text-accent-700">{{ f.flight_iata }}</a>{% else %}—{% endif %}
+        </td>
+        <td class="p-3 font-mono">
+          {% if f.dep_iata %}<a href="{{ url_for('airport_view', code=f.dep_iata) }}" class="hover:text-accent-700">{{ f.dep_iata }}</a>{% else %}—{% endif %}
+        </td>
+        <td class="p-3 font-mono">
+          {% if f.arr_iata %}<a href="{{ url_for('airport_view', code=f.arr_iata) }}" class="hover:text-accent-700">{{ f.arr_iata }}</a>{% else %}—{% endif %}
+        </td>
+        <td class="p-3 text-ink-700">{{ f.alt or '—' }}{% if f.alt %} m{% endif %}</td>
+        <td class="p-3 text-ink-700">{{ f.speed or '—' }}{% if f.speed %} km/h{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="p-6 text-ink-500 text-sm">No live flights right now.</div>
+  {% endif %}
+</section>
+{% endblock %}

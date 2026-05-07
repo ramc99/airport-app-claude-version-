@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Nearby{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-semibold tracking-tight mb-4">Nearby airports & flights</h1>
+
+<form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8 max-w-3xl">
+  <input name="lat" value="{{ lat }}" placeholder="Latitude" class="px-3 py-2 border border-ink-200 rounded-md bg-white focus:outline-none focus:border-accent-600">
+  <input name="lng" value="{{ lng }}" placeholder="Longitude" class="px-3 py-2 border border-ink-200 rounded-md bg-white focus:outline-none focus:border-accent-600">
+  <input name="distance" value="{{ distance }}" placeholder="Distance (km)" class="px-3 py-2 border border-ink-200 rounded-md bg-white focus:outline-none focus:border-accent-600">
+  <button class="px-4 py-2 bg-ink-900 text-white rounded-md hover:bg-ink-700">Search</button>
+</form>
+
+<div class="text-xs text-ink-500 mb-6">
+  Try: Paris <a href="?lat=48.85&lng=2.35&distance=100" class="text-accent-700 hover:underline">48.85, 2.35</a> ·
+  Tokyo <a href="?lat=35.68&lng=139.76&distance=100" class="text-accent-700 hover:underline">35.68, 139.76</a> ·
+  NYC <a href="?lat=40.71&lng=-74.01&distance=100" class="text-accent-700 hover:underline">40.71, -74.01</a>
+</div>
+
+{% if result %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <section class="bg-white rounded-lg border border-ink-200">
+    <div class="p-4 border-b border-ink-200"><h2 class="font-semibold">Airports ({{ result.airports|length }})</h2></div>
+    {% if result.airports %}
+    <table class="w-full text-sm">
+      <thead class="text-xs text-ink-500 uppercase">
+        <tr><th class="text-left p-3">Code</th><th class="text-left p-3">Name</th><th class="text-left p-3">Distance</th></tr>
+      </thead>
+      <tbody>
+        {% for a in result.airports %}
+        <tr class="border-t border-ink-100 hover:bg-ink-50">
+          <td class="p-3 font-mono">
+            {% if a.iata_code %}<a href="{{ url_for('airport_view', code=a.iata_code) }}" class="hover:text-accent-700">{{ a.iata_code }}</a>{% else %}{{ a.icao_code or '—' }}{% endif %}
+          </td>
+          <td class="p-3">{{ a.name or '—' }}</td>
+          <td class="p-3 text-ink-700">{{ a.distance or '—' }}{% if a.distance %} km{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="p-6 text-ink-500 text-sm">No airports in range.</div>{% endif %}
+  </section>
+
+  <section class="bg-white rounded-lg border border-ink-200">
+    <div class="p-4 border-b border-ink-200"><h2 class="font-semibold">Flights ({{ result.flights|length }})</h2></div>
+    {% if result.flights %}
+    <table class="w-full text-sm">
+      <thead class="text-xs text-ink-500 uppercase">
+        <tr><th class="text-left p-3">Flight</th><th class="text-left p-3">From → To</th><th class="text-left p-3">Alt</th></tr>
+      </thead>
+      <tbody>
+        {% for f in result.flights %}
+        <tr class="border-t border-ink-100 hover:bg-ink-50">
+          <td class="p-3 font-mono">
+            {% if f.flight_iata %}<a href="{{ url_for('flight_view', code=f.flight_iata) }}" class="hover:text-accent-700">{{ f.flight_iata }}</a>{% else %}—{% endif %}
+          </td>
+          <td class="p-3 font-mono">{{ f.dep_iata or '?' }} → {{ f.arr_iata or '?' }}</td>
+          <td class="p-3 text-ink-700">{{ f.alt or '—' }}{% if f.alt %} m{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="p-6 text-ink-500 text-sm">No flights in range.</div>{% endif %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}

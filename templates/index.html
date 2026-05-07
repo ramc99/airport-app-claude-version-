@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}airport-app{% endblock %}
+
+{% block content %}
+<section class="mb-10">
+  <h1 class="text-3xl font-semibold tracking-tight">Live airport data.</h1>
+  <p class="text-ink-500 mt-2 max-w-2xl">
+    Look up flights, schedules, airports, airlines, routes, and delays in real time.
+    Use the search bar above for a code, or pick a tool below.
+  </p>
+</section>
+
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <a href="{{ url_for('flight_view') }}" class="block p-5 bg-white rounded-lg border border-ink-200 hover:border-accent-600 transition">
+    <div class="text-sm font-medium text-accent-700 uppercase tracking-wide">Flight status</div>
+    <div class="mt-1 text-ink-900">Live position, altitude, speed, and status for one flight.</div>
+    <div class="mt-3 text-xs text-ink-500">e.g. BA178, AA100</div>
+  </a>
+
+  <a href="{{ url_for('schedules_view') }}" class="block p-5 bg-white rounded-lg border border-ink-200 hover:border-accent-600 transition">
+    <div class="text-sm font-medium text-accent-700 uppercase tracking-wide">Schedules</div>
+    <div class="mt-1 text-ink-900">Departures or arrivals at an airport, today.</div>
+    <div class="mt-3 text-xs text-ink-500">filter by airport or airline</div>
+  </a>
+
+  <a href="{{ url_for('airport_view', code='JFK') }}" class="block p-5 bg-white rounded-lg border border-ink-200 hover:border-accent-600 transition">
+    <div class="text-sm font-medium text-accent-700 uppercase tracking-wide">Airport detail</div>
+    <div class="mt-1 text-ink-900">Info, departures, arrivals, and delays in one view.</div>
+    <div class="mt-3 text-xs text-ink-500">try /airport/JFK</div>
+  </a>
+
+  <a href="{{ url_for('routes_view') }}" class="block p-5 bg-white rounded-lg border border-ink-200 hover:border-accent-600 transition">
+    <div class="text-sm font-medium text-accent-700 uppercase tracking-wide">Routes</div>
+    <div class="mt-1 text-ink-900">Which airlines fly between two airports.</div>
+    <div class="mt-3 text-xs text-ink-500">e.g. LHR → HND</div>
+  </a>
+
+  <a href="{{ url_for('delays_view') }}" class="block p-5 bg-white rounded-lg border border-ink-200 hover:border-accent-600 transition">
+    <div class="text-sm font-medium text-accent-700 uppercase tracking-wide">Delays</div>
+    <div class="mt-1 text-ink-900">Currently delayed flights at an airport.</div>
+    <div class="mt-3 text-xs text-ink-500">configurable threshold</div>
+  </a>
+
+  <a href="{{ url_for('nearby_view') }}" class="block p-5 bg-white rounded-lg border border-ink-200 hover:border-accent-600 transition">
+    <div class="text-sm font-medium text-accent-700 uppercase tracking-wide">Nearby</div>
+    <div class="mt-1 text-ink-900">Airports and aircraft near coordinates.</div>
+    <div class="mt-3 text-xs text-ink-500">lat/lng, radius up to 500 km</div>
+  </a>
+</section>
+
+<section class="mt-12">
+  <h2 class="text-sm font-semibold text-ink-700 uppercase tracking-wide mb-3">Quick links</h2>
+  <div class="flex flex-wrap gap-2">
+    {% for code in ['JFK', 'LHR', 'CDG', 'HND', 'DXB', 'SIN', 'LAX', 'FRA'] %}
+      <a href="{{ url_for('airport_view', code=code) }}" class="px-3 py-1 text-sm bg-white border border-ink-200 rounded-md hover:border-accent-600 hover:text-accent-700">{{ code }}</a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

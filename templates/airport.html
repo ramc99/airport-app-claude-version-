@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ airport.name or airport.iata_code }} · airport{% endblock %}
+
+{% block content %}
+<header class="mb-6">
+  <div class="flex items-baseline gap-3">
+    <h1 class="text-3xl font-semibold tracking-tight">{{ airport.name or 'Airport' }}</h1>
+    {% if airport.iata_code %}<span class="text-2xl font-mono text-ink-500">{{ airport.iata_code }}</span>{% endif %}
+  </div>
+  <div class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-500">
+    {% if airport.icao_code %}<span>ICAO: <span class="font-mono text-ink-700">{{ airport.icao_code }}</span></span>{% endif %}
+    {% if airport.country_code %}<span>Country: <span class="text-ink-700">{{ airport.country_code }}</span></span>{% endif %}
+    {% if airport.city %}<span>City: <span class="text-ink-700">{{ airport.city }}</span></span>{% endif %}
+    {% if airport.timezone %}<span>TZ: <span class="text-ink-700">{{ airport.timezone }}</span></span>{% endif %}
+    {% if airport.lat and airport.lng %}
+      <a href="{{ url_for('nearby_view', lat=airport.lat, lng=airport.lng, distance=100) }}" class="text-accent-700 hover:underline">nearby →</a>
+    {% endif %}
+  </div>
+</header>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <section class="bg-white rounded-lg border border-ink-200">
+    <div class="flex items-center justify-between p-4 border-b border-ink-200">
+      <h2 class="font-semibold">Departures</h2>
+      <a href="{{ url_for('schedules_view', dep=iata) }}" class="text-xs text-accent-700 hover:underline">all →</a>
+    </div>
+    {% if departures %}
+      <table class="w-full text-sm">
+        <thead class="text-xs text-ink-500 uppercase">
+          <tr><th class="text-left p-3">Flight</th><th class="text-left p-3">To</th><th class="text-left p-3">Time</th><th class="text-left p-3">Status</th></tr>
+        </thead>
+        <tbody>
+          {% for f in departures %}
+          <tr class="border-t border-ink-100 hover:bg-ink-50">
+            <td class="p-3 font-mono">
+              {% if f.flight_iata %}<a href="{{ url_for('flight_view', code=f.flight_iata) }}" class="hover:text-accent-700">{{ f.flight_iata }}</a>{% else %}—{% endif %}
+            </td>
+            <td class="p-3 font-mono">
+              {% if f.arr_iata %}<a href="{{ url_for('airport_view', code=f.arr_iata) }}" class="hover:text-accent-700">{{ f.arr_iata }}</a>{% else %}—{% endif %}
+            </td>
+            <td class="p-3 text-ink-700">{{ f.dep_time or '—' }}</td>
+            <td class="p-3">{% include "_status.html" with context %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-6 text-ink-500 text-sm">No departures right now.</div>
+    {% endif %}
+  </section>
+
+  <section class="bg-white rounded-lg border border-ink-200">
+    <div class="flex items-center justify-between p-4 border-b border-ink-200">
+      <h2 class="font-semibold">Arrivals</h2>
+      <a href="{{ url_for('schedules_view', arr=iata) }}" class="text-xs text-accent-700 hover:underline">all →</a>
+    </div>
+    {% if arrivals %}
+      <table class="w-full text-sm">
+        <thead class="text-xs text-ink-500 uppercase">
+          <tr><th class="text-left p-3">Flight</th><th class="text-left p-3">From</th><th class="text-left p-3">Time</th><th class="text-left p-3">Status</th></tr>
+        </thead>
+        <tbody>
+          {% for f in arrivals %}
+          <tr class="border-t border-ink-100 hover:bg-ink-50">
+            <td class="p-3 font-mono">
+              {% if f.flight_iata %}<a href="{{ url_for('flight_view', code=f.flight_iata) }}" class="hover:text-accent-700">{{ f.flight_iata }}</a>{% else %}—{% endif %}
+            </td>
+            <td class="p-3 font-mono">
+              {% if f.dep_iata %}<a href="{{ url_for('airport_view', code=f.dep_iata) }}" class="hover:text-accent-700">{{ f.dep_iata }}</a>{% else %}—{% endif %}
+            </td>
+            <td class="p-3 text-ink-700">{{ f.arr_time or '—' }}</td>
+            <td class="p-3">{% include "_status.html" with context %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-6 text-ink-500 text-sm">No arrivals right now.</div>
+    {% endif %}
+  </section>
+</div>
+
+{% if delays %}
+<section class="mt-6 bg-white rounded-lg border border-ink-200">
+  <div class="flex items-center justify-between p-4 border-b border-ink-200">
+    <h2 class="font-semibold">Delays (≥30 min)</h2>
+    <a href="{{ url_for('delays_view', dep=iata) }}" class="text-xs text-accent-700 hover:underline">configure →</a>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="text-xs text-ink-500 uppercase">
+      <tr><th class="text-left p-3">Flight</th><th class="text-left p-3">To</th><th class="text-left p-3">Delay</th><th class="text-left p-3">Status</th></tr>
+    </thead>
+    <tbody>
+      {% for f in delays %}
+      <tr class="border-t border-ink-100 hover:bg-ink-50">
+        <td class="p-3 font-mono">
+          {% if f.flight_iata %}<a href="{{ url_for('flight_view', code=f.flight_iata) }}" class="hover:text-accent-700">{{ f.flight_iata }}</a>{% else %}—{% endif %}
+        </td>
+        <td class="p-3 font-mono">
+          {% if f.arr_iata %}<a href="{{ url_for('airport_view', code=f.arr_iata) }}" class="hover:text-accent-700">{{ f.arr_iata }}</a>{% else %}—{% endif %}
+        </td>
+        <td class="p-3"><span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-medium">{{ f.delayed }} min</span></td>
+        <td class="p-3">{% include "_status.html" with context %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

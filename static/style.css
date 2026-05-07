@@ -1,0 +1,13 @@
+/* Tiny overrides on top of Tailwind. Keep this file small. */
+
+input[type="text"], input[type="number"], input:not([type]) {
+  text-transform: none;
+}
+
+input.uppercase, input[name="dep"], input[name="arr"], input[name="airline"], input[name="code"] {
+  text-transform: uppercase;
+}
+
+table { border-collapse: collapse; }
+
+pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

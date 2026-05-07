@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}airport-app{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: { 50: '#f7f7f5', 100: '#ececea', 200: '#d8d7d3', 300: '#b3b1ab', 500: '#6b6864', 700: '#3a3835', 900: '#1a1917' },
+            accent: { 600: '#4a6b7c', 700: '#3a5564' },
+          },
+          fontFamily: {
+            sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-ink-50 text-ink-900 font-sans min-h-screen flex flex-col">
+  <header class="bg-white border-b border-ink-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-6">
+      <a href="{{ url_for('home') }}" class="text-lg font-semibold tracking-tight">
+        airport<span class="text-accent-600">·</span>app
+      </a>
+      <nav class="flex gap-4 text-sm text-ink-700">
+        <a href="{{ url_for('flight_view') }}" class="hover:text-accent-700">Flights</a>
+        <a href="{{ url_for('schedules_view') }}" class="hover:text-accent-700">Schedules</a>
+        <a href="{{ url_for('routes_view') }}" class="hover:text-accent-700">Routes</a>
+        <a href="{{ url_for('delays_view') }}" class="hover:text-accent-700">Delays</a>
+        <a href="{{ url_for('nearby_view') }}" class="hover:text-accent-700">Nearby</a>
+      </nav>
+      <form action="{{ url_for('search') }}" method="get" class="ml-auto flex items-center">
+        <input
+          name="q"
+          placeholder="JFK · BA · BA178"
+          class="text-sm w-56 px-3 py-1.5 rounded-md border border-ink-200 bg-ink-50 placeholder-ink-300 focus:outline-none focus:border-accent-600 focus:bg-white"
+          autocomplete="off"
+        >
+        <button class="ml-2 px-3 py-1.5 text-sm rounded-md bg-ink-900 text-white hover:bg-ink-700">Search</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl mx-auto px-4 py-8 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-ink-200 bg-white">
+    <div class="max-w-6xl mx-auto px-4 py-3 text-xs text-ink-500 flex justify-between">
+      <span>data: <a href="https://airlabs.co" class="underline hover:text-ink-700">airlabs.co</a></span>
+      <span>v0.1</span>
+    </div>
+  </footer>
+</body>
+</html>
