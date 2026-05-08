@@ -86,13 +86,6 @@ python app.py
 
 The application will start on `http://127.0.0.1:5000`
 
-### Access the Application
-
-Open your web browser and navigate to:
-```
-http://127.0.0.1:5000
-```
-
 ## Using the Chatbot
 
 The chatbot is accessible from any page in the application:
