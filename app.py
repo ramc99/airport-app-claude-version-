@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -43,7 +43,7 @@ def home():
 
 @app.route("/healthz")
 def healthz():
-    return {"status": "ok", "ts": datetime.utcnow().isoformat() + "Z"}
+    return {"status": "ok", "ts": datetime.now(timezone.utc).isoformat()}
 
 
 @app.route("/search")
@@ -250,7 +250,7 @@ def nearby_view():
 def chat_api():
     """Chatbot API endpoint using Cloud LLM API for answering user queries."""
     
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
     
     if not message:
