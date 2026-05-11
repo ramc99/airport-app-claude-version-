@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import json
+import re
 import requests
 from datetime import datetime, timezone
 from pathlib import Path
@@ -245,37 +246,91 @@ def nearby_view():
 
 # ---------- chatbot API ----------
 
+_NOISE_WORDS = {
+    'THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS',
+    'ONE', 'OUR', 'OUT', 'DAY', 'GET', 'HAS', 'HIM', 'HIS', 'HOW', 'ITS', 'MAY',
+    'NEW', 'NOW', 'OLD', 'SEE', 'TWO', 'WAY', 'WHO', 'BOY', 'DID', 'GOT', 'LET',
+    'PUT', 'SAY', 'TOO', 'USE', 'FLY', 'ANY', 'BIG', 'FAR', 'OFF', 'OWN', 'SET',
+    'TRY', 'WHY', 'ASK', 'RUN', 'AGO', 'VIA', 'ETA', 'ETD',
+}
+
+
+def _fetch_realtime_context(message: str) -> str:
+    """Extract entities from the message, call AirLabs, and return context string."""
+    try:
+        msg_up = message.upper()
+        msg_lo = message.lower()
+
+        flight_codes = re.findall(r'\b([A-Z]{2}\d{1,4}[A-Z]?)\b', msg_up)
+        airport_codes = [c for c in re.findall(r'\b([A-Z]{3})\b', msg_up) if c not in _NOISE_WORDS]
+
+        is_delay    = any(w in msg_lo for w in ('delay', 'delayed', 'late'))
+        is_schedule = any(w in msg_lo for w in ('flight', 'schedule', 'fly', 'depart', 'arrive', 'from', 'to', 'when'))
+        is_route    = any(w in msg_lo for w in ('route', 'routes', 'airlines fly'))
+        is_airport  = any(w in msg_lo for w in ('airport', 'terminal'))
+        is_live     = any(w in msg_lo for w in ('status', 'where is', 'live', 'current', 'tracking', 'right now'))
+
+        parts: list[str] = []
+
+        if flight_codes:
+            f = airlabs.flight(flight_iata=flight_codes[0])
+            if f:
+                parts.append(f"Live flight {flight_codes[0]}: {json.dumps(f)}")
+
+        if is_delay and airport_codes:
+            rows = airlabs.delays(dep_iata=airport_codes[0], limit=5)
+            if rows:
+                parts.append(f"Current delays at {airport_codes[0]}: {json.dumps(rows)}")
+
+        if is_schedule and len(airport_codes) >= 2:
+            rows = airlabs.schedules(dep_iata=airport_codes[0], arr_iata=airport_codes[1], limit=10)
+            if rows:
+                parts.append(f"Schedules {airport_codes[0]} to {airport_codes[1]}: {json.dumps(rows)}")
+        elif is_schedule and len(airport_codes) == 1:
+            rows = airlabs.schedules(dep_iata=airport_codes[0], limit=10)
+            if rows:
+                parts.append(f"Departures from {airport_codes[0]}: {json.dumps(rows)}")
+
+        if is_route and len(airport_codes) >= 2:
+            rows = airlabs.routes(dep_iata=airport_codes[0], arr_iata=airport_codes[1], limit=10)
+            if rows:
+                parts.append(f"Routes {airport_codes[0]} to {airport_codes[1]}: {json.dumps(rows)}")
+
+        if is_airport and airport_codes and not parts:
+            info = airlabs.airport(iata=airport_codes[0])
+            if info:
+                parts.append(f"Airport {airport_codes[0]}: {json.dumps(info)}")
+
+        return "\n".join(parts)
+    except Exception:
+        return ""
+
+
+_SYSTEM_PROMPT = """You are a helpful airport assistant. Answer questions about flights, airports, airlines, schedules, delays, and routes.
+
+Rules:
+- Reply in plain text only. No markdown, no tables, no bullet points, no bold, no headers.
+- Be concise and direct.
+- If real-time data is provided, use it to give accurate answers. Otherwise use general aviation knowledge.
+- If you need a specific code or date from the user, ask in one short sentence.
+"""
+
 
 @app.route("/api/chat", methods=["POST"])
 def chat_api():
-    """Chatbot API endpoint using Cloud LLM API for answering user queries."""
-    
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
-    
+
     if not message:
         return {"response": "Please ask a question about flights, airports, airlines, schedules, delays, or routes."}
-    
-    # System prompt to guide the LLM
-    system_prompt = """You are a helpful airport assistant powered by AI. You help users with queries about flights, airports, airlines, schedules, delays, and routes.
 
-When answering:
-- Be concise and informative
-- If you need specific codes (airport, airline, flight numbers), ask the user politely
-- Use IATA codes (3 letters for airports, 2 letters for airlines) when possible
-- For flight status, mention departure/arrival airports and current status
-- For delays, mention the duration and affected flights
-- For routes, list available airlines between airports
-
-You have access to general aviation knowledge. Provide helpful answers based on your training data.
-"""
-    
-    # Check if cloud API key is configured
     if not CLOUD_LLM_API_KEY:
         return {"response": "Cloud LLM API key is not configured. Please set CLOUD_LLM_API_KEY in your .env file."}
-    
+
+    realtime = _fetch_realtime_context(message)
+    user_content = f"{message}\n\n[Real-time AirLabs data]\n{realtime}" if realtime else message
+
     try:
-        # Call Cloud LLM API (OpenRouter compatible format)
         response = requests.post(
             CLOUD_LLM_URL,
             headers={
@@ -287,8 +342,8 @@ You have access to general aviation knowledge. Provide helpful answers based on 
             json={
                 "model": CLOUD_MODEL,
                 "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": message}
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": user_content}
                 ],
                 "temperature": 0.7,
                 "max_tokens": 500
@@ -297,15 +352,13 @@ You have access to general aviation knowledge. Provide helpful answers based on 
         )
         response.raise_for_status()
         result = response.json()
-        
-        # Extract response from OpenRouter format
+
         llm_response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-        
         if not llm_response:
             llm_response = "I received an empty response from the AI service. Please try rephrasing your question."
-        
+
         return {"response": llm_response}
-        
+
     except requests.exceptions.Timeout:
         return {"response": "The AI service took too long to respond. Please try again."}
     except requests.exceptions.ConnectionError:
